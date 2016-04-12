@@ -1,4 +1,3 @@
-import sys
 from gamestate import Gamestate, Move, Switch
 
 MOVE_CORRECTIONS = {"ExtremeSpeed": "Extreme Speed",
@@ -95,9 +94,12 @@ def handle_turn(log, state, nicks, players):
         elif type == '-heal' or type == '-damage':
             player, nick = get_player_nick(info)
 
-            health = info[1].split(' ')[0].split('\\')[0]
+            health = info[1].split(' ')[0].split('\\/')
 
-            health = float(health) / 100
+            if len(health) == 1:
+                health = float(health[0]) / 100
+            else:
+                health = float(health[0]) / float(health[1])
 
             state.set_health(player, health)
 
