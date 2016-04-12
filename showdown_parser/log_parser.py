@@ -9,6 +9,12 @@ MOVE_CORRECTIONS = {"ExtremeSpeed": "Extreme Speed",
 IGNORE = set([
 ])
 
+def get_player_nick(info):
+    player, nick = info[0].split(':', 1)
+    nick = nick[1:]
+    player = int(player[1]) - 1
+    return player, nick
+
 def parse_line(line):
     line = line.split('|')
     if len(line) <= 1:
@@ -51,39 +57,31 @@ def handle_turn(log, state, nicks, players):
             player = int(player[1]) - 1
             state.add_poke(player, poke)
         elif type == 'detailschange':
-            player, nick = info[0].split(':', 1)
+            player, nick = get_player_nick(info)
             poke = info[1]
-            player = int(player[1]) - 1
-            nick = nick.strip()
 
             old_name = nicks[player][nick]
-            state.set_poke(player, old_name, poke)
+            state.set_poke_name(player, old_name, poke)
             nicks[player][nick] = poke
 
         elif type == 'switch':
-            player, nick = info[0].split(':', 1)
-            nick = nick[1:]
+            player, nick = get_player_nick(info)
             poke = info[1]
-            player = int(player[1]) - 1
 
             nicks[player][nick] = poke
             state.set_primary(player, poke)
 
             actions[player] = Switch(poke)
         elif type == 'move':
-            player, nick = info[0].split(':', 1)
+            player, nick = get_player_nick(info)
             move = info[1]
             if move in MOVE_CORRECTIONS:
                 move = MOVE_CORRECTIONS[move]
-            player = int(player[1]) - 1
-            nick = nick.strip()
 
             actions[player] = Move(move)
         elif type == 'drag':
-            player, nick = info[0].split(':')
+            player, nick = get_player_nick(info)
             poke = info[1]
-            player = int(player[1]) - 1
-            nick = nick.strip()
 
             nicks[player][nick] = poke
             state.set_primary(player, poke)
@@ -91,6 +89,17 @@ def handle_turn(log, state, nicks, players):
             player = players[info[0]]
             rewards[player] = 1
             rewards[1 - player] = -1
+        elif type == 'faint':
+            player, nick = get_player_nick(info)
+            state.set_faint(player)
+        elif type == '-heal' or type == '-damage':
+            player, nick = get_player_nick(info)
+
+            health = info[1].split(' ')[0].split('\\')[0]
+
+            health = float(health) / 100
+
+            state.set_health(player, health)
 
     current_state = state.copy()
     for player, action in actions.items():
@@ -118,7 +127,7 @@ if __name__ == "__main__":
     from tqdm import tqdm
     r = ReplayDatabase("replays_all.db")
     experience_db = []
-    for (id, replay_id, log) in tqdm(r.get_replays()):
+    for (id, replay_id, log) in tqdm(r.get_replays()[:1]):
         if not replay_id[:2] == 'ou':
             continue
         if replay_id in IGNORE:
@@ -128,6 +137,6 @@ if __name__ == "__main__":
                 experience_db.append(experience)
         except:
             print "Failed on replay:", replay_id
-            #import traceback
-            #traceback.print_exc()
-            #raise Exception()
+            # import traceback
+            # traceback.print_exc()
+            # raise Exception()
