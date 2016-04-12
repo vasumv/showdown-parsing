@@ -1,3 +1,8 @@
+import re
+
+SWITCH_REGEX = "Switch\((?P<switch>.+)\)"
+MOVE_REGEX = "Move\((?P<move>.+)\)"
+
 class Gamestate(object):
 
     def __init__(self, teams=None, faint=None, health=None):
@@ -89,13 +94,30 @@ class Pokemon(object):
                        health=self.health)
 
 class Action(object):
-    pass
+
+    def __hash__(self):
+        return hash((self.name, self.is_switch()))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    @classmethod
+    def from_string(cls, string):
+        if re.match(SWITCH_REGEX, string):
+            name = re.match(SWITCH_REGEX, string).group('switch')
+            return Switch(name)
+        elif re.match(MOVE_REGEX, string):
+            name = re.match(MOVE_REGEX, string).group('move')
+            return Move(name)
 
     def is_move(self):
         return False
 
     def is_switch(self):
         return False
+
+    def get_name(self):
+        return self.name
 
 class Move(Action):
     def __init__(self, name):

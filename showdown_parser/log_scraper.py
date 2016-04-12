@@ -12,7 +12,7 @@ def parse_args():
     argparser.add_argument('db_path')
     argparser.add_argument('--start_index', default=0, type=int)
     argparser.add_argument('--end_index', default=499, type=int)
-    argparser.add_argument('--max_page', default=100, type=int)
+    argparser.add_argument('--max_page', default=20, type=int)
 
     return argparser.parse_args()
 
@@ -22,6 +22,8 @@ def get_usernames():
     return [t.text.encode('utf-8') for t in soup.find_all('a', {'class': 'subtle'})]
 
 def page_done(database, replay_ids):
+    if len(replay_ids) == 0:
+        return True
     first, last = replay_ids[0], replay_ids[-1]
     return database.check_replay_exists(first) and database.check_replay_exists(last)
 
